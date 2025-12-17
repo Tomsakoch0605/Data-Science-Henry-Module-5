@@ -1,51 +1,115 @@
 import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from carga_datos import cargarDatos
+
+from sklearn.preprocessing import FunctionTransformer
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.model_selection import train_test_split
 
 
-def prepare_data(df):
+df = cargarDatos()
 
-    data = df.copy()
+# Vista general del dataset (EDA básico)
+df.info()
+print(df.head())
+print(df.describe(include="all"))
 
-    target = "Pago_atiempo"
 
-    data = data.drop(columns=["fecha_prestamo"])
+TARGET = "Pago_atiempo"
 
-    data["puntaje_datacredito"] = data["puntaje_datacredito"].fillna(
-        data["puntaje_datacredito"].median()
+X = df.drop(TARGET, axis=1)
+y = df[TARGET]
+
+
+num_features = X.select_dtypes(include="number").columns
+cat_features = X.select_dtypes(include="object").columns
+
+print("Numeric features:")
+print(num_features)
+
+print("Categorical features:")
+print(cat_features)
+
+
+num_transformer = Pipeline(
+    steps=[
+        ("imputer", SimpleImputer(strategy="mean"))
+    ]
+)
+
+cat_transformer = Pipeline(
+    steps=[
+        ("to_str", FunctionTransformer(lambda x: x.astype(str))),
+        ("imputer", SimpleImputer(strategy="most_frequent")),
+        ("onehot", OneHotEncoder(
+            handle_unknown="ignore",
+            sparse_output=False
+        ))
+    ]
+)
+
+
+preprocessor = ColumnTransformer(
+    transformers=[
+        ("num", num_transformer, num_features),
+        ("cat", cat_transformer, cat_features)
+    ]
+)
+
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X,
+    y,
+    test_size=0.2,
+    random_state=42,
+    stratify=y
+)
+
+X_train_processed = preprocessor.fit_transform(X_train)
+X_test_processed = preprocessor.transform(X_test)
+
+
+print("X_train procesado:")
+print(X_train_processed)
+print("Shape:", X_train_processed.shape)
+
+print("X_test procesado:")
+print(X_test_processed)
+print("Shape:", X_test_processed.shape)
+
+
+def ft_engineering(X_input=None):
+
+    if X_input is None:
+        X_input = df.drop(TARGET, axis=1)
+
+    num_features = X_input.select_dtypes(include="number").columns
+    cat_features = X_input.select_dtypes(include="object").columns
+
+    num_transformer = Pipeline(
+        steps=[
+            ("imputer", SimpleImputer(strategy="mean"))
+        ]
     )
 
-    data["promedio_ingresos_datacredito"] = data[
-        "promedio_ingresos_datacredito"
-    ].fillna(data["promedio_ingresos_datacredito"].median())
-
-    data["tendencia_ingresos"] = data["tendencia_ingresos"].fillna("Desconocido")
-
-    X = data.drop(columns=[target])
-    y = data[target]
-
-    numeric_features = X.select_dtypes(include=["int64", "float64"]).columns
-    categorical_features = X.select_dtypes(include=["object"]).columns
-
-    numeric_transformer = Pipeline(
-        steps=[("scaler", StandardScaler())]
-    )
-
-    categorical_transformer = Pipeline(
-        steps=[("encoder", OneHotEncoder(handle_unknown="ignore"))]
+    cat_transformer = Pipeline(
+        steps=[
+            ("to_str", FunctionTransformer(lambda x: x.astype(str))),
+            ("imputer", SimpleImputer(strategy="most_frequent")),
+            ("onehot", OneHotEncoder(
+                handle_unknown="ignore",
+                sparse_output=False
+            ))
+        ]
     )
 
     preprocessor = ColumnTransformer(
         transformers=[
-            ("num", numeric_transformer, numeric_features),
-            ("cat", categorical_transformer, categorical_features),
+            ("num", num_transformer, num_features),
+            ("cat", cat_transformer, cat_features)
         ]
     )
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42, stratify=y
-    )
-
-    return X_train, X_test, y_train, y_test, preprocessor
+    return preprocessor
