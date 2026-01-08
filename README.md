@@ -266,10 +266,10 @@ Este proyecto está bajo la Licencia MIT. Ver el archivo `LICENSE` para más det
 
 ## 👤 Autor
 
-**[Tu Nombre]**
+**Alejandro Carrillo**
 
-- GitHub: [@tu-usuario](https://github.com/tu-usuario)
-- LinkedIn: [Tu Perfil](https://linkedin.com/in/tu-perfil)
+- GitHub: [@Tomsakoch0605](https://github.com/Tomsakoch0605)
+- LinkedIn: [Alejandro Carrillo](https://www.linkedin.com/in/michel-alejandro-carrillo-vázquez-93658977)
 
 ---
 
